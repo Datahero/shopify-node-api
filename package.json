@@ -1,6 +1,6 @@
 {
   "name": "shopify-node-api",
-  "version": "1.4.5",
+  "version": "1.4.10",
   "description": "OAuth2 Module for Shopify API",
   "main": "./lib/shopify",
   "scripts": {
@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/sinechris/shopify-node-api",
   "dependencies": {
-    "MD5": "^1.2.1"
+    "crypto": "0.0.3"
   },
   "devDependencies": {
     "mocha": "^1.20.1",

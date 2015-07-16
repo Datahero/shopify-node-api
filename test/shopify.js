@@ -76,15 +76,85 @@ describe('#is_valid_signature', function(){
         // Values used below were pre-calculated and not part
         // of an actual shop.
 
-        var Shopify = shopifyAPI({}),
+        var Shopify = shopifyAPI({
+                shopify_shared_secret: 'hush'
+            }),
             params = {
-                code: 'di389so32hwh28923823dh3289329hdd',
-                shop: 'testy-tester.myshopify.com',
-                timestamp: '1402539839',
-                signature: '0132e77d7fb358ecd4645d86cfc39d27'
+                'shop': 'some-shop.myshopify.com',
+                'code': 'a94a110d86d2452eb3e2af4cfb8a3828',
+                'timestamp': '1337178173',
+                'signature': '6e39a2ea9e497af6cb806720da1f1bf3',
+                'hmac': '2cb1a277650a659f1b11e92a4a64275b128e037f2c3390e3c8fd2d8721dac9e2'
             };
 
         expect(Shopify.is_valid_signature(params)).to.equal(true);
+    });
+});
+
+describe('#exchange_temporary_token', function(){
+    it('should exchange a temporary token', function(done){
+
+        // Values used below were pre-calculated and not part
+        // of an actual shop.
+
+        var Shopify = shopifyAPI({
+                shop: 'myshop',
+                shopify_api_key: 'abc123',
+                shopify_shared_secret: 'hush',
+                verbose: false
+            }),
+            params = {
+                'shop': 'some-shop.myshopify.com',
+                'code': 'a94a110d86d2452eb3e2af4cfb8a3828',
+                'timestamp': '1337178173',
+                'signature': '6e39a2ea9e497af6cb806720da1f1bf3',
+                'hmac': '2cb1a277650a659f1b11e92a4a64275b128e037f2c3390e3c8fd2d8721dac9e2'
+            };
+
+        var shopifyTokenFetch = nock('https://myshop.myshopify.com')
+            .post('/admin/oauth/access_token')
+            .reply(200, {
+                "access_token": "abcd"
+            });
+
+        Shopify.exchange_temporary_token(params, function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          shopifyTokenFetch.done();
+          done();
+        });
+    });
+
+    it('should return an error object with a legible message', function(done) {
+        var Shopify = shopifyAPI({
+                shop: 'myshop',
+                shopify_api_key: 'abc123',
+                shopify_shared_secret: 'hush',
+                verbose: false
+            }),
+            params = {
+                'shop': 'some-shop.myshopify.com',
+                'code': 'a94a110d86d2452eb3e2af4cfb8a3828',
+                'timestamp': '1337178173',
+                'signature': '6e39a2ea9e497af6cb806720da1f1bf3',
+                'hmac': '2cb1a277650a659f1b11e92a4a64275b128e037f2c3390e3c8fd2d8721dac9e2'
+            };
+
+        // Shopify will return an invalid request in some cases, e.g. if a code
+        // is not valid for exchanging to a permanent token.
+        var shopifyTokenFetch = nock('https://myshop.myshopify.com')
+            .post('/admin/oauth/access_token')
+            .reply(400, {
+                error: "invalid_request"
+            });
+
+        Shopify.exchange_temporary_token(params, function(err, res) {
+          shopifyTokenFetch.done();
+          expect(err).to.be.instanceof(Error);
+          expect(err.message).to.equal("invalid_request");
+          done();
+        });
     });
 });
 
